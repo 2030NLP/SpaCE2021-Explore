@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpaCE2021 数据探索</title>
+  <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.0.2/css/bootstrap.min.css" rel="stylesheet">
+  <style type="text/css">
+    [v-cloak] { display: none; }
+    p, table { margin: 0.25em 0 !important;}
+    .card.table-wrap-wrap { display: flex; flex-direction: column; height: 80vh; }
+    .card-body.table-wrap { flex: 1; overflow: auto; }
+    /*.card-body.table-wrap > table { flex: 1; height: 100%; }*/
+    .card-body.table-wrap > table > thead { position: sticky; top: 0; background: rgba(233, 233, 233, 0.9999); }
+    .card-body.table-wrap > table > thead { text-align: center; vertical-align: middle; }
+    .card-body.table-wrap > table > thead > * > * {  }
+    /*.card-body.table-wrap > table > tbody { display: block; flex: 1; overflow: auto; }*/
+    .card-body--images-wrap { border: 1px solid #eee; background: #eee; overflow-x: auto; }
+    .the_card { margin: 1.5rem 0; }
+    .loadmore_card { margin: 1.5rem 0; padding: 1rem; cursor: pointer; }
+    .the_desc { white-space: pre; }
+    .the_pill { margin-right: 0.5em; }
+    .table-sm { font-size: 0.8em; }
+    .reason-type-a { color: #088; }
+    .reason-type-b { color: #880; }
+    .reason-type-c { color: #808; }
+    .reason-type-d { color: #800; }
+    .table-hover > tbody > tr:hover {
+        --bs-table-accent-bg: #ffc;
+        color: initial;
+    }
+    #main-container { margin-top: 2rem; }
+    #main-container .row { margin: 1rem 0; }
+    .text-input-slim { width: 3rem !important; }
+    .content-wrap { margin: 0.5rem 0; }
+    .content-wrap:first-child { margin: 0 0 0.5rem; }
+    .content-wrap:last-child { margin: 0.5rem 0 0; }
+    .image-cards-wrap { white-space: nowrap; }
+    .image-card { width: 240px; margin: 0 1rem 0 0; display: inline-block; }
+    .image-card:last-child { margin: 0; }
+    .image-card .card-body { padding: 0.5rem 0.5rem; }
+    .image-in-card-wrap { margin: 0 auto; width: 220px; height: 200px; display: flex; align-items: center; justify-content: center;}
+    .image-in-card { max-width: 100%; max-height: 100%; }
+  </style>
+</head>
+<body>
+<div id="app">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container">
+    <a class="navbar-brand" href="#">SpaCE2021 数据探索</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+  </div>
+</nav>
+<div class="container text-center" id="main-container" v-if="false">
+  <div class="row">
+    <div class="col">
+      ……加载中，请稍后……
+    </div>
+  </div>
+</div>
+<div v-cloak class="container" id="main-container">
+
+
+
+<div class="row" v-if="!imported">
+  <form name="file-form" class="col">
+    <label class="form-label">本工具并不内含数据。请手动加载数据，如「 SpaCE2021-Explore-Data-211209.json 」。</label>
+    <div class="input-group">
+      <input class="form-control" type="file" name="file-input" id="file-input" ref="file_input" accept=".json">
+      <button class="btn btn-primary" type="button" @click="onImport">📥 载入</button>
+    </div>
+  </form>
+</div>
+
+
+
+<div class="row" v-if="!imported && importerror">
+  <div class="col">
+    <label class="form-label">数据格式不正确！若无法解决，请联系管理员。</label>
+  </div>
+</div>
+
+
+
+<div class="row" v-if="imported">
+  <div class="col">
+    <div class="input-group input-group-sm">
+      <select class="form-select" v-model="ui.taskPlan">
+        <option value="0" selected>请选择任务</option>
+        <option value="1">子任务1</option>
+        <option value="2">子任务2</option>
+        <option value="3">子任务3</option>
+      </select>
+      <select class="form-select" v-model="ui.orderMethodPlan">
+        <option value="0" selected>请选择排序方式</option>
+        <option value="1">人机正确率差异升序</option>
+        <option value="2">人机正确率差异降序</option>
+        <option value="3">全体正确率升序</option>
+        <option value="4">全体正确率降序</option>
+        <option value="5">机器正确率升序</option>
+        <option value="6">机器正确率降序</option>
+        <option value="7">人类正确率升序</option>
+        <option value="8">人类正确率降序</option>
+      </select>
+      <button type="button" class="btn btn-outline-secondary" @click="makeData">GO!</button>
+    </div>
+  </div>
+</div>
+
+<div class="row" v-if="imported">
+  <div class="col">
+    <div class="card table-wrap-wrap">
+      <div class="card-header">
+        <div class="row my-0">
+          <div class="col">
+            <div class="input-group input-group-sm">
+              <div class="input-group-text">共 {{items.length}} 条记录</div>
+              <button type="button" class="btn btn-sm btn-outline-secondary" @click="exportPageJson">导出本页json</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" @click="exportAllJson">导出全部json</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" @click="exportPageCsv">导出本页csv</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" @click="exportAllCsv">导出全部csv</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body table-wrap">
+        <table class="table table-sm table-bordered table-striped table-hover">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">qID</th>
+              <th scope="col">句子</th>
+              <th scope="col" v-for="thead in ui.theads">{{thead}}</th>
+            </tr>
+          </thead>
+
+          <tbody v-if="ui.task==1">
+            <tr v-for="(item, idx) in items_slice" :key="item.qid">
+              <td>{{idx + ui.idxStart + 1}}</td>
+              <td>{{item.qid}}</td>
+              <td><span :title="item.old_face">{{item.context}}</span></td>
+              <!-- ['句子正误 GOLD', '人类正确率', '机器正确率', '人机差异', '总体正确率'] -->
+              <td>{{item.goldJ1}}</td>
+
+              <td><span v-if="item.hasHuman">{{item.correctNumJ1Human}} / {{item.totalNumHuman}} = {{item.accuracyJ1Human.toFixed(3)}}</span></td>
+              <td><span v-if="item.hasMachine">{{item.correctNumJ1Machine}} / {{item.totalNumMachine}} = {{item.accuracyJ1Machine.toFixed(3)}}</span></td>
+              <td>{{item.accuracyJ1Delta}}</td>
+              <td><span v-if="item.hasAll">{{item.correctNumJ1All}} / {{item.totalNumAll}} = {{item.accuracyJ1All.toFixed(3)}}</span></td>
+            </tr>
+          </tbody>
+
+          <tbody v-if="ui.task==2">
+            <tr v-for="(item, idx) in items_slice" :key="item.qid">
+              <td>{{idx + ui.idxStart + 1}}</td>
+              <td>{{item.qid}}</td>
+              <td><span :title="item.old_face">{{item.context}}</span></td>
+              <!-- ['归因', '归因正误 GOLD', '人类正确率', '机器正确率', '人机差异', '总体正确率'] -->
+              <td><span :class="reasonColor(item)">{{item.reason}}</span></td>
+              <td>{{item.goldJ2}}</td>
+
+              <td><span v-if="item.hasHuman">{{item.correctNumJ2Human}} / {{item.totalNumHuman}} = {{item.accuracyJ2Human.toFixed(3)}}</span></td>
+              <td><span v-if="item.hasMachine">{{item.correctNumJ2Machine}} / {{item.totalNumMachine}} = {{item.accuracyJ2Machine.toFixed(3)}}</span></td>
+              <td>{{item.accuracyJ2Delta}}</td>
+              <td><span v-if="item.hasAll">{{item.correctNumJ2All}} / {{item.totalNumAll}} = {{item.accuracyJ2All.toFixed(3)}}</span></td>
+            </tr>
+          </tbody>
+
+          <tbody v-if="ui.task==3">
+            <tr v-for="(item, idx) in items_slice" :key="item.qid">
+              <td>{{idx + ui.idxStart + 1}}</td>
+              <td>{{item.qid}}</td>
+              <td><span :title="item.old_face">{{item.context}}</span></td>
+              <!-- ['归因', '句子正误 GOLD', '归因正误 GOLD', '人类J1正确率', '机器J1正确率', '人机J1差异', '总体J1正确率', '人类J2正确率', '机器J2正确率', '人机J2差异', '总体J2正确率'] -->
+              <td><span :class="reasonColor(item)">{{item.reason}}</span></td>
+              <td>{{item.goldJ1}}</td>
+              <td>{{item.goldJ2}}</td>
+
+              <td><span v-if="item.hasHuman">{{item.correctNumJ1Human}} / {{item.totalNumHuman}} = {{item.accuracyJ1Human.toFixed(3)}}</span></td>
+              <td><span v-if="item.hasMachine">{{item.correctNumJ1Machine}} / {{item.totalNumMachine}} = {{item.accuracyJ1Machine.toFixed(3)}}</span></td>
+              <td>{{item.accuracyJ1Delta}}</td>
+              <td><span v-if="item.hasAll">{{item.correctNumJ1All}} / {{item.totalNumAll}} = {{item.accuracyJ1All.toFixed(3)}}</span></td>
+
+              <td><span v-if="item.hasHuman && item.shouldJudge2">{{item.correctNumJ2Human}} / {{item.totalNumHuman}} = {{item.accuracyJ2Human.toFixed(3)}}</span></td>
+              <td><span v-if="item.hasMachine && item.shouldJudge2">{{item.correctNumJ2Machine}} / {{item.totalNumMachine}} = {{item.accuracyJ2Machine.toFixed(3)}}</span></td>
+              <td><span v-if="item.shouldJudge2">{{item.accuracyJ2Delta}}</span></td>
+              <td><span v-if="item.hasAll && item.shouldJudge2">{{item.correctNumJ2All}} / {{item.totalNumAll}} = {{item.accuracyJ2All.toFixed(3)}}</span></td>
+            </tr>
+          </tbody>
+
+        </table>
+      </div>
+      <div class="card-footer">
+        <div class="row my-0">
+          <div class="col my-1 col-12 col-lg-4">
+            <div class="input-group input-group-sm">
+              <div class="input-group-text">跳转到第</div>
+              <input type="text" class="form-control text-input-slim" v-model="ui.targetPage">
+              <div class="input-group-text">页</div>
+              <button type="button" class="btn btn-sm btn-outline-secondary" @click="goTargetPage">GO!</button>
+            </div>
+          </div>
+          <div class="col my-1 col-12 col-lg-4">
+            <div class="input-group input-group-sm">
+              <button type="button" class="btn btn-sm btn-outline-secondary" @click="goPrePage">上一页</button>
+              <div class="input-group-text">第 {{ui.currentPage}} / {{totalPage}} 页</div>
+              <button type="button" class="btn btn-sm btn-outline-secondary" @click="goNextPage">下一页</button>
+            </div>
+          </div>
+          <div class="col my-1 col-12 col-lg-4">
+            <div class="input-group input-group-sm">
+              <div class="input-group-text">每页</div>
+              <input type="text" class="form-control text-input-slim" v-model="ui.numPerPagePlan">
+              <div class="input-group-text">条</div>
+              <button type="button" class="btn btn-sm btn-outline-secondary" @click="setPerPage">GO!</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+<script src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/vue/3.1.5/vue.global.prod.js"></script>
+<!-- <script src="./data.js"></script> -->
+<script type="text/javascript">
+let xx=3;
+</script>
+
+<script type="text/javascript">
+const RootComponent = {
+  data() {
+    return {
+      ui: {
+        task: 0,
+        taskPlan: 0,
+        orderMethod: 0,
+        orderMethodPlan: 0,
+        idxStart: 0,
+        numPerPage: 20,
+        numPerPagePlan: 20,
+        currentPage: 1,
+        targetPage: 1,
+        theads: [],
+        // tkeys: [],
+      },
+      imported: false,
+      importerror: false,
+      items: [],
+      items_slice: [],
+      dicts: {
+        things: {},
+        answerGold: {},
+        answersHuman: {},
+        answersMachine: {},
+        accuracyHuman: {},
+        accuracyMachine: {},
+        accuracyAll: {},
+      },
+      tables: {
+        qsets_new: {},
+        thingsDict: {},
+
+        goldAnswers: {},
+        machineAnswers: {},
+        humanAnswers: {},
+        humanCorrectRates: {},
+        machineCorrectRates: {},
+        correctRates: {},
+        correctRatesSelected: {
+          task1: [],
+          task2: [],
+          task3: [],
+        },
+      },
+    }
+  },
+  computed: {
+    totalPage() {
+      return Math.trunc((this.items.length+this.ui.numPerPage-1) / this.ui.numPerPage);
+    },
+  },
+  methods: {
+    exportPageJson() {
+      let txt = JSON.stringify({uiSettings: this.ui, exportSettings: {method: "page"}, data: this.items_slice}, null, 2);
+      // console.log(txt);
+      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(${this.ui.idxStart + 1}-${this.ui.idxStart + this.ui.numPerPage}-of-${this.items.length}).json`, {type: "text/plain;charset=utf-8"});
+      saveAs(file);
+    },
+    exportAllJson() {
+      let txt = JSON.stringify({uiSettings: this.ui, exportSettings: {method: "all"}, data: this.items}, null, 2);
+      // console.log(txt);
+      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(1-${this.items.length}-of-${this.items.length}).json`, {type: "text/plain;charset=utf-8"});
+      saveAs(file);
+    },
+    exportPageCsv() {
+      let theads = Object.keys(this.items_slice[0] ?? {});
+      let txt_h = JSON.stringify(theads);
+      txt_h = txt_h.slice(1, txt_h.length-1);
+      // console.log(txt_h);
+
+      let tbodys = this.items_slice.map(item => {
+        let txt = JSON.stringify(Object.values(item ?? {}));
+        txt = txt.slice(1, txt.length-1);
+        return txt;
+      });
+      let txt_b = tbodys.join("\n");
+      // console.log(txt_b);
+      let txt = [txt_h, txt_b].join("\n");
+      // console.log(txt);
+      // console.log(txt);
+      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(${this.ui.idxStart + 1}-${this.ui.idxStart + this.ui.numPerPage}-of-${this.items.length}).csv`, {type: "text/plain;charset=utf-8"});
+      saveAs(file);
+    },
+    exportAllCsv() {
+      let theads = Object.keys(this.items[0] ?? {});
+      let txt_h = JSON.stringify(theads);
+      txt_h = txt_h.slice(1, txt_h.length-1);
+      // console.log(txt_h);
+
+      let tbodys = this.items.map(item => {
+        let txt = JSON.stringify(Object.values(item ?? {}));
+        txt = txt.slice(1, txt.length-1);
+        return txt;
+      });
+      let txt_b = tbodys.join("\n");
+      // console.log(txt_b);
+      let txt = [txt_h, txt_b].join("\n");
+      // console.log(txt);
+      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(1-${this.items.length}-of-${this.items.length}).csv`, {type: "text/plain;charset=utf-8"});
+      saveAs(file);
+    },
+
+    makeData() {
+      //
+      const SELF = this;
+      let task = SELF.ui.taskPlan;
+      if (task == 0) {task = 1};
+      let orderMethod = SELF.ui.orderMethodPlan;
+
+      let theads;
+      if (task == "1") {
+        console.log("case 1");
+        theads = ['句子正误 GOLD', '人类正确率', '机器正确率', '人机差异', '总体正确率'];
+      } else if (task == "2") {
+        console.log("case 2");
+        theads = ['归因', '归因正误 GOLD', '人类正确率', '机器正确率', '人机差异', '总体正确率'];
+      } else {
+        console.log("case 3");
+        theads = ['归因', '句子正误 GOLD', '归因正误 GOLD', '人类J1正确率', '机器J1正确率', '人机J1差异', '总体J1正确率', '人类J2正确率', '机器J2正确率', '人机J2差异', '总体J2正确率'];
+      };
+      console.log(theads);
+      SELF.ui.theads.splice(0, SELF.ui.theads.length);
+      for (let th of theads) { SELF.ui.theads.push(th); };
+
+      console.log(`makeData(${task}, ${orderMethod})`);
+
+      const filters = {
+        "hasAll": qid => ((qid in SELF.dicts.accuracyHuman) && (qid in SELF.dicts.accuracyMachine)),
+        "hasHuman": qid => (qid in SELF.dicts.accuracyHuman),
+        "hasMachine": qid => (qid in SELF.dicts.accuracyMachine),
+      };
+
+        // <option value="0" selected>请选择排序方式</option>
+        // <option value="1">人机正确率差异升序</option>
+        // <option value="2">人机正确率差异降序</option>
+        // <option value="3">全体正确率升序</option>
+        // <option value="4">全体正确率降序</option>
+        // <option value="5">机器正确率升序</option>
+        // <option value="6">机器正确率降序</option>
+        // <option value="7">人类正确率升序</option>
+        // <option value="8">人类正确率降序</option>
+
+      const filterActions = {
+        "0": qid => false,
+        "1": qid => filters["hasAll"](qid),
+        "2": qid => filters["hasAll"](qid),
+        "3": qid => filters["hasAll"](qid),
+        "4": qid => filters["hasAll"](qid),
+        "5": qid => filters["hasMachine"](qid),
+        "6": qid => filters["hasMachine"](qid),
+        "7": qid => filters["hasHuman"](qid),
+        "8": qid => filters["hasHuman"](qid),
+      };
+
+      let qids = SELF.tables.things.filter(
+        (item) => (
+          ( item.qID[0] == task ) &&
+          ( filterActions[ (orderMethod).toString() ](item.qID) )
+        )
+      )
+      .map( (item) => item.qID )
+      ;
+
+      let items = [];
+      items = qids.map((qid) => {
+        return {
+          qid: qid,
+          context: SELF.touch(qid, "context"),
+          from: SELF.touch(qid, "from"),
+          to: SELF.touch(qid, "to"),
+          old_face: SELF.touch(qid, "old_face"),
+          reason: SELF.touch(qid, "reason"),
+          reasonType: SELF.touch(qid, "reasonType"),
+          goldJ1: SELF.touch(qid, "goldJ1"),
+          goldJ2: SELF.touch(qid, "goldJ2"),
+
+          hasAll: SELF.touch(qid, "hasAll"),
+          hasHuman: SELF.touch(qid, "hasHuman"),
+          hasMachine: SELF.touch(qid, "hasMachine"),
+
+          totalNumAll: SELF.touch(qid, "totalNumAll"),
+          totalNumHuman: SELF.touch(qid, "totalNumHuman"),
+          totalNumMachine: SELF.touch(qid, "totalNumMachine"),
+
+          correctNumJ1Human: SELF.touch(qid, "correctNumJ1Human"),
+          accuracyJ1Human: SELF.touch(qid, "accuracyJ1Human"),
+          correctNumJ1Machine: SELF.touch(qid, "correctNumJ1Machine"),
+          accuracyJ1Machine: SELF.touch(qid, "accuracyJ1Machine"),
+
+          correctNumJ1All: SELF.touch(qid, "correctNumJ1All"),
+          accuracyJ1All: SELF.touch(qid, "accuracyJ1All"),
+          accuracyJ1Delta: SELF.touch(qid, "accuracyJ1Delta"),
+
+          shouldJudge2: SELF.touch(qid, "shouldJudge2"),
+
+          correctNumJ2Human: SELF.touch(qid, "correctNumJ2Human"),
+          accuracyJ2Human: SELF.touch(qid, "accuracyJ2Human"),
+          correctNumJ2Machine: SELF.touch(qid, "correctNumJ2Machine"),
+          accuracyJ2Machine: SELF.touch(qid, "accuracyJ2Machine"),
+
+          correctNumJ2All: SELF.touch(qid, "correctNumJ2All"),
+          accuracyJ2All: SELF.touch(qid, "accuracyJ2All"),
+          accuracyJ2Delta: SELF.touch(qid, "accuracyJ2Delta"),
+        };
+      });
+
+      // console.log(items);
+
+      // 数据排序
+      const sortMethods = {  // 与「排序依据」对应的排序函数
+        // 人机正确率差异
+        delta: (a, b) => {
+          if (a.shouldJudge2 && b.shouldJudge2) {
+            return a.accuracyJ2Delta - b.accuracyJ2Delta;
+          }
+          if (a.shouldJudge2 && !b.shouldJudge2) {
+            return 1;
+          }
+          if (!a.shouldJudge2 && b.shouldJudge2) {
+            return -1;
+          }
+          return a.accuracyJ1Delta - b.accuracyJ1Delta;
+        },
+
+        // 全体正确率
+        allAcc: (a, b) => {
+          if (a.shouldJudge2 && b.shouldJudge2) {
+            return a.accuracyJ2All - b.accuracyJ2All;
+          }
+          if (a.shouldJudge2 && !b.shouldJudge2) {
+            return 1;
+          }
+          if (!a.shouldJudge2 && b.shouldJudge2) {
+            return -1;
+          }
+          return a.accuracyJ1All - b.accuracyJ1All;
+        },
+
+        // 人类正确率
+        humanAcc: (a, b) => {
+          if (a.shouldJudge2 && b.shouldJudge2) {
+            return a.accuracyJ2Human - b.accuracyJ2Human;
+          }
+          if (a.shouldJudge2 && !b.shouldJudge2) {
+            return 1;
+          }
+          if (!a.shouldJudge2 && b.shouldJudge2) {
+            return -1;
+          }
+          return a.accuracyJ1Human - b.accuracyJ1Human;
+        },
+
+        // 机器正确率
+        machineAcc: (a, b) => {
+          if (a.shouldJudge2 && b.shouldJudge2) {
+            return a.accuracyJ2Machine - b.accuracyJ2Machine;
+          }
+          if (a.shouldJudge2 && !b.shouldJudge2) {
+            return 1;
+          }
+          if (!a.shouldJudge2 && b.shouldJudge2) {
+            return -1;
+          }
+          return a.accuracyJ1Machine - b.accuracyJ1Machine;
+        },
+      };
+      const sortAction = {
+        "1": (a, b) => sortMethods['delta'](a, b),
+        "2": (a, b) => sortMethods['delta'](b, a),
+        "3": (a, b) => sortMethods['allAcc'](a, b),
+        "4": (a, b) => sortMethods['allAcc'](b, a),
+        "5": (a, b) => sortMethods['machineAcc'](a, b),
+        "6": (a, b) => sortMethods['machineAcc'](b, a),
+        "7": (a, b) => sortMethods['humanAcc'](a, b),
+        "8": (a, b) => sortMethods['humanAcc'](b, a),
+      };
+      items.sort(sortAction[(orderMethod).toString()]);
+
+        // <option value="0" selected>请选择排序方式</option>
+        // <option value="1">人机正确率差异升序</option>
+        // <option value="2">人机正确率差异降序</option>
+        // <option value="3">全体正确率升序</option>
+        // <option value="4">全体正确率降序</option>
+        // <option value="5">机器正确率升序</option>
+        // <option value="6">机器正确率降序</option>
+        // <option value="7">人类正确率升序</option>
+        // <option value="8">人类正确率降序</option>
+
+
+      SELF.ui.task = task;
+      SELF.ui.taskPlan = task;
+      SELF.ui.orderMethod = orderMethod;
+      SELF.ui.orderMethodPlan = orderMethod;
+
+      // SELF.items = [];
+      SELF.items.splice(0, SELF.items.length);
+      // SELF.items_slice = [];
+      SELF.items_slice.splice(0, SELF.items_slice.length);
+      for (let item of items) {
+        SELF.items.push(item);
+      };
+      SELF.updateSlice();
+      console.log(SELF.items_slice);
+
+    },
+
+
+
+    reasonColor(item) {
+      if (item.reasonType=="A") {return {'reason-type-a': true}};
+      if (item.reasonType=="B") {return {'reason-type-b': true}};
+      if (item.reasonType=="C") {return {'reason-type-c': true}};
+      if (item.reasonType=="D") {return {'reason-type-d': true}};
+    },
+    updateSlice() {
+      this.ui.targetPage = Math.max(Math.min(this.ui.targetPage, this.totalPage), 1)
+      this.ui.currentPage = this.ui.targetPage;
+      this.ui.idxStart = (this.ui.targetPage-1) * this.ui.numPerPage;
+      this.items_slice.splice(0, this.items_slice.length);
+      let items_slice = this.items.slice(this.ui.idxStart, this.ui.idxStart+this.ui.numPerPage);
+      for (let item of items_slice) {
+        this.items_slice.push(item);
+      };
+    },
+    goTargetPage() {
+      this.updateSlice();
+      console.log(`前往第${this.ui.targetPage}页`);
+    },
+    setPerPage() {
+      this.ui.numPerPage = +this.ui.numPerPagePlan;
+      this.ui.targetPage = Math.floor(this.ui.idxStart / this.ui.numPerPage) + 1;
+      this.goTargetPage();
+    },
+    goPrePage() {
+      this.ui.targetPage -= 1;
+      this.goTargetPage();
+    },
+    goNextPage() {
+      this.ui.targetPage += 1;
+      this.goTargetPage();
+    },
+
+
+    touch(qid, key) {
+      const placeholder = null;
+      const SELF = this;
+
+      const accuracyJxSome = (qid, x, Some) => {
+        let cn = SELF.dicts?.[`accuracy${Some}`]?.[qid]?.[`correctNumJ${x}`];
+        let tn = SELF.dicts?.[`accuracy${Some}`]?.[qid]?.totalNum;
+        let xx = (cn || tn) ?? "不能算";
+        if (xx == "不能算") {
+          return placeholder;
+        };
+        return SELF.dicts?.[`accuracy${Some}`]?.[qid]?.[`correctNumJ${x}`] / SELF.dicts?.[`accuracy${Some}`]?.[qid]?.totalNum;
+      };
+      const accuracyJxAll = (qid, x) => {
+        let ht = SELF.dicts?.[`accuracyHuman`]?.[qid]?.totalNum;
+        let mt = SELF.dicts?.[`accuracyMachine`]?.[qid]?.totalNum;
+
+        let x1 = ht ?? "不能算";
+        let x2 = mt ?? "不能算";
+        if (x1 == "不能算" && x2 == "不能算") {
+          return placeholder;
+        };
+
+        let tt = (ht || 0) + (mt || 0);
+        if (tt == 0) {
+          return placeholder;
+        };
+
+        let hn = SELF.dicts?.[`accuracyHuman`]?.[qid]?.[`correctNumJ${x}`] ?? 0;
+        let mn = SELF.dicts?.[`accuracyMachine`]?.[qid]?.[`correctNumJ${x}`] ?? 0;
+
+        return (hn + mn) / tt;
+      };
+      const accuracyJxDelta = (qid, x) => {
+        let accH = accuracyJxSome(qid, x, "Human");
+        let accM = accuracyJxSome(qid, x, "Machine");
+        if (Number.isFinite(accH) && Number.isFinite(accM)) {
+          return (accH - accM).toFixed(3);
+        };
+        return placeholder;
+      };
+
+      const computaions = {
+        "context": (qid) => (SELF.dicts?.things[qid]?.context ?? placeholder),
+        "from": (qid) => (SELF.dicts?.things[qid]?.from ?? placeholder),
+        "to": (qid) => (SELF.dicts?.things[qid]?.to ?? placeholder),
+        "old_face": (qid) => (SELF.dicts?.things[qid]?.old_face ?? placeholder),
+        "reason": (qid) => (SELF.dicts?.things[qid]?.reason ?? placeholder),
+        "reasonType": (qid) => {
+          let reason = SELF.dicts?.things[qid]?.reason ?? "";
+          if (reason.includes("不宜搭配")) {return "A"};
+          if (reason.includes("语义冲突")) {return "B"};
+          if (reason.includes("存在信息冲突")) {return "C"};
+          if (reason.includes("不符合常识")) {return "D"};
+        },
+        "goldJ1": (qid) => (SELF.dicts?.answerGold[qid]?.judge1 ?? placeholder),
+        "goldJ2": (qid) => (SELF.dicts?.answerGold[qid]?.judge2 ?? placeholder),
+
+        "hasAll": (qid) => ((qid in SELF.dicts?.accuracyHuman) && (qid in SELF.dicts?.accuracyMachine)),
+        "hasHuman": (qid) => (qid in SELF.dicts?.accuracyHuman),
+        "hasMachine": (qid) => (qid in SELF.dicts?.accuracyMachine),
+
+        "totalNumAll": (qid) => (((SELF.dicts?.accuracyHuman[qid]?.totalNum ?? 0) + (SELF.dicts?.accuracyMachine[qid]?.totalNum ?? 0)) || placeholder),
+        "totalNumHuman": (qid) => (SELF.dicts?.accuracyHuman[qid]?.totalNum ?? placeholder),
+        "totalNumMachine": (qid) => (SELF.dicts?.accuracyMachine[qid]?.totalNum ?? placeholder),
+
+        "correctNumJ1Human": (qid) => (SELF.dicts?.accuracyHuman[qid]?.correctNumJ1 ?? placeholder),
+        "accuracyJ1Human": (qid) => accuracyJxSome(qid, "1", "Human"),
+        "correctNumJ1Machine": (qid) => (SELF.dicts?.accuracyMachine[qid]?.correctNumJ1 ?? placeholder),
+        "accuracyJ1Machine": (qid) => accuracyJxSome(qid, "1", "Machine"),
+
+        "correctNumJ1All": (qid) => (((SELF.dicts?.accuracyHuman[qid]?.correctNumJ1 ?? 0) + (SELF.dicts?.accuracyMachine[qid]?.correctNumJ1 ?? 0)) || placeholder),
+        "accuracyJ1All": (qid) => accuracyJxAll(qid, "1"),
+        "accuracyJ1Delta": (qid) => accuracyJxDelta(qid, "1"),
+
+        "shouldJudge2": (qid) =>  (qid[0]=="2" || ((qid[0]=="3") && (SELF.dicts?.things[qid]?.judge1 === false))),
+
+        "correctNumJ2Human": (qid) => (SELF.dicts?.accuracyHuman[qid]?.correctNumJ2 ?? placeholder),
+        "accuracyJ2Human": (qid) => accuracyJxSome(qid, "2", "Human"),
+        "correctNumJ2Machine": (qid) => (SELF.dicts?.accuracyMachine[qid]?.correctNumJ2 ?? placeholder),
+        "accuracyJ2Machine": (qid) => accuracyJxSome(qid, "2", "Machine"),
+
+        "correctNumJ2All": (qid) => (((SELF.dicts?.accuracyHuman[qid]?.correctNumJ2 ?? 0) + (SELF.dicts?.accuracyMachine[qid]?.correctNumJ2 ?? 0)) || placeholder),
+        "accuracyJ2All": (qid) => accuracyJxAll(qid, "2"),
+        "accuracyJ2Delta": (qid) => accuracyJxDelta(qid, "2"),
+      };
+
+      if (key in computaions) {
+        return computaions[key](qid);
+      };
+      return placeholder;
+    },
+
+    makeHumanAnswers() {  // 整理人类答案
+      const SELF = this;
+      for (sheet of [...SELF.tables.minSheets, ...SELF.tables.minSheets2]) {
+        let qset = SELF.tables.qsets_new[sheet[1]];
+        let prefix = `${qset.task}-${qset.set}-`;
+        let num = qset.rangeL;
+        let answers = [];
+        if (qset.task == "3") {
+          answers = Array.from(sheet[3]);
+          let new_answers = [];
+          for (let i=0; i<answers.length; i+=2) {
+            new_answers.push(answers.slice(i, i+2));
+          };
+          answers = new_answers.map(x => {return [x[0]=="1", x[1]=="1"]});
+        } else {
+          answers = Array.from(sheet[3]).map(x => x=="1");
+        };
+        for (let answer of answers) {
+          let qid = `${prefix}${num}`;
+          if (sheet[0]!="GOLD") {
+            if (!(qid in SELF.tables.humanAnswers)) {
+              SELF.tables.humanAnswers[qid] = {};
+            };
+            SELF.tables.humanAnswers[qid][sheet[0]] = answer;
+          };
+          num += 1;
+        };
+      };
+    },
+
+    makeMachineAnswers() {  // 整理机器答案
+      const SELF = this;
+      for (sheet of SELF.tables.machineSheets_Test) {
+        let sheet1 = Array.from(sheet.sheet1).map(x => x=="1");
+        let sheet2 = Array.from(sheet.sheet2).map(x => x=="1");
+        let tmp_sheet3 = [];
+        for (let i=0; i<sheet.sheet3.length; i+=2) {
+          tmp_sheet3.push(sheet.sheet3.slice(i, i+2));
+        };
+        let sheet3 = tmp_sheet3.map(x => {return [x[0]=="1", x[1]=="1"]});
+
+        let sheetss = [sheet1, sheet2, sheet3];
+
+        for (let xx of [1, 2, 3]) {
+          let num = 1;
+          for (let answer of sheetss[xx-1]) {
+            let qid = `${xx}-test-${num}`;
+            if (!(qid in SELF.tables.machineAnswers)) {
+              SELF.tables.machineAnswers[qid] = {};
+            };
+            SELF.tables.machineAnswers[qid][sheet.team] = answer;
+            num += 1;
+          };
+        };
+      };
+    },
+
+    makeThingsDict() {  // 把题库信息放到 dict 里
+      const SELF = this;
+      for (thing of SELF.tables.things) {
+        let qid = thing.qID;
+        SELF.dicts.things[qid] = thing;
+      };
+    },
+    makeGold() {  // 整理正确答案
+      const SELF = this;
+      for (thing of SELF.tables.things) {
+        let qid = thing.qID;
+        SELF.dicts.things[qid] = thing;
+        let answer;
+        if (qid[0]=="1") {
+          answer = {judge1: thing.judge1};
+        };
+        if (qid[0]=="2") {
+          answer = {judge2: thing.judge2};
+        };
+        if (qid[0]=="3") {
+          answer = {judge1: thing.judge1, judge2: thing.judge2};
+        };
+        SELF.dicts.answerGold[qid] = answer;
+      };
+    },
+    makeAccuracySome(some) {  // 整理XX正确率
+      let Some = `${some[0].toUpperCase()}${some.slice(1,some.length)}`;
+      const SELF = this;
+      for (let item of Object.entries(SELF.tables[`${some}Answers`])) {
+        let qid = item[0];
+        let answersObj = item[1];
+        let answers = Object.values(answersObj);
+        if (qid[0] != "3") {
+
+          let ratesObj = {
+            task: qid[0],
+            answers: answersObj,
+            totalNum: answers.length,
+          };
+          ratesObj[`goldJ${qid[0]}`] = SELF.dicts.answerGold[qid][`judge${qid[0]}`];
+          ratesObj[`correctNumJ${qid[0]}`] = 0;
+
+          for (let answer of answers) {
+            if (answer == ratesObj[`goldJ${qid[0]}`]) {
+              ratesObj[`correctNumJ${qid[0]}`] += 1;
+            };
+          };
+
+          SELF.dicts[`accuracy${Some}`][qid] = ratesObj;
+
+        } else {
+          let ratesObj = {
+            task: "3",
+            goldJ1: SELF.dicts.answerGold[qid][`judge1`],
+            goldJ2: SELF.dicts.answerGold[qid][`judge2`],
+            answers: answersObj,
+            totalNum: answers.length,
+            correctNumJ1: 0,
+            correctNumJ2: 0,
+          };
+          for (let answer of answers) {
+            if (answer[0] == ratesObj.goldJ1) {
+              ratesObj.correctNumJ1 += 1;
+              if ((ratesObj.goldJ1 == false) && (answer[1] == ratesObj.goldJ2)) {
+                ratesObj.correctNumJ2 += 1;
+              }
+            };
+          };
+          SELF.dicts[`accuracy${Some}`][qid] = ratesObj;
+        };
+      };
+      console.log(SELF.dicts[`accuracy${Some}`]);
+    },
+
+
+    makeSomeCorrectRates(some) {  // 整理XX正确率
+      const SELF = this;
+      for (let item of Object.entries(SELF.tables[`${some}Answers`])) {
+        let qid = item[0];
+        let answersObj = item[1];
+        let answers = Object.values(answersObj);
+        if (qid[0] != "3") {
+          let ratesObj = {
+            task: qid[0],
+            gold: SELF.tables.goldAnswers[qid],
+            answers: answersObj,
+            totalNum: answers.length,
+            correctNum: 0,
+          };
+          for (let answer of answers) {
+            if (answer == ratesObj.gold) {
+              ratesObj.correctNum += 1;
+            };
+          };
+          SELF.tables[`${some}CorrectRates`][qid] = ratesObj;
+        } else {
+          let ratesObj = {
+            task: "3",
+            gold: SELF.tables.goldAnswers[qid],
+            goldJ1: SELF.tables.goldAnswers[qid][0],
+            goldJ2: SELF.tables.goldAnswers[qid][1],
+            answers: answersObj,
+            totalNum: answers.length,
+            correctNumJ1: 0,
+            correctNumJ2: 0,
+          };
+          for (let answer of answers) {
+            if (answer[0] == ratesObj.gold[0]) {
+              ratesObj.correctNumJ1 += 1;
+              if ((ratesObj.gold[0] == false) && (answer[1] == ratesObj.gold[1])) {
+                ratesObj.correctNumJ2 += 1;
+              }
+            };
+          };
+          SELF.tables[`${some}CorrectRates`][qid] = ratesObj;
+        };
+      };
+      console.log(SELF.tables[`${some}CorrectRates`]);
+    },
+    // onImport__OLD() {
+    //   const SELF = this;
+    //   console.log("created");
+
+    //   let fetchFileTask = (filepath, tablename) => {
+    //     let task = fetch(filepath)
+    //     .then((response) => {
+    //       return response.json();
+    //     })
+    //     .then((myJson) => {
+    //       SELF.tables[tablename] = myJson;
+    //     });
+    //     return task;
+    //   };
+
+    //   // let task0 = fetchFileTask('./题库/lc_db.json', 'lc_db');
+    //   let task00 = fetchFileTask('./题库/SpaCE2021-data/things.json', 'things');
+    //   let task1 = fetchFileTask('./人类/minSheets.json', 'minSheets');
+    //   let task2 = fetchFileTask('./人类/minSheets2.json', 'minSheets2');
+    //   let task3 = fetchFileTask('./机器/SpaCE2021决赛所有答卷及评分（Python）.json', 'machineSheets_Test');
+    //   let task4 = fetchFileTask('./人类/Qsets.json', 'qsets');
+
+    //   Promise.allSettled([/*task0, */task00, task1, task2, task3, task4])
+    //   .then(() => {
+    //     console.log(SELF.tables);
+    //   })
+    //   .then(() => {
+    //     for (qset of SELF.tables.qsets) {
+    //       SELF.tables.qsets_new[qset.label] = qset;
+    //     };
+    //   })
+    //   .then(() => {  // 整理答案
+    //     SELF.makeHumanAnswers();
+    //     SELF.makeMachineAnswers();
+    //     SELF.makeGold();
+    //   })
+    //   .then(() => {  // 整理正确率
+    //     SELF.makeAccuracySome("human");
+    //     SELF.makeAccuracySome("machine");
+    //   })
+    //   .then(() => {
+    //     console.log("done.");
+    //     SELF.imported = true;
+    //   })
+    //   ;
+    // },
+    onImport() {
+      const SELF = this;
+      console.log("onImport");
+
+      SELF.importerror = false;
+
+      let file = document.forms["file-form"]["file-input"].files[0];
+      let reader = new FileReader();
+      reader.readAsText(file, "utf-8");
+      reader.onload = function(evt) {
+        let result;
+        let goon = true;
+        try {
+          result = JSON.parse(this.result);
+        } catch (error) {
+          console.error(error);
+          goon = false;
+          SELF.importerror = true;
+        };
+
+        if (goon && ("things" in result) && ("minSheets" in result) && ("minSheets2" in result) && ("machineSheets_Test" in result) && ("qsets" in result)) {
+
+          SELF.tables.things = result.things;
+          SELF.tables.minSheets = result.minSheets;
+          SELF.tables.minSheets2 = result.minSheets2;
+          SELF.tables.machineSheets_Test = result.machineSheets_Test;
+          SELF.tables.qsets = result.qsets;
+
+          console.log(SELF.tables);
+
+          for (qset of SELF.tables.qsets) {
+            SELF.tables.qsets_new[qset.label] = qset;
+          };
+
+          SELF.makeHumanAnswers();
+          SELF.makeMachineAnswers();
+          SELF.makeGold();
+
+          SELF.makeAccuracySome("human");
+          SELF.makeAccuracySome("machine");
+
+          console.log("done.");
+          SELF.imported = true;
+
+        } else {
+          SELF.importerror = true;
+        };
+      };
+    },
+
+  // methods end
+  },
+};
+const app = Vue.createApp(RootComponent);
+const the_vue = app.mount('#app');
+</script>
+</div>
+</body>
+</html>
