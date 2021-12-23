@@ -310,13 +310,13 @@ const RootComponent = {
     exportPageJson() {
       let txt = JSON.stringify({uiSettings: this.ui, exportSettings: {method: "page"}, data: this.items_slice}, null, 2);
       // console.log(txt);
-      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(${this.ui.idxStart + 1}-${this.ui.idxStart + this.ui.numPerPage}-of-${this.items.length}).json`, {type: "text/plain;charset=utf-8"});
+      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(${this.ui.idxStart + 1}-${this.ui.idxStart + this.ui.numPerPage}-of-${this.items.length})-(${this.ui.filterFrom||"X"}→${this.ui.filterTo||"X"}).json`, {type: "text/plain;charset=utf-8"});
       saveAs(file);
     },
     exportAllJson() {
       let txt = JSON.stringify({uiSettings: this.ui, exportSettings: {method: "all"}, data: this.items}, null, 2);
       // console.log(txt);
-      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(1-${this.items.length}-of-${this.items.length}).json`, {type: "text/plain;charset=utf-8"});
+      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(1-${this.items.length}-of-${this.items.length})-(${this.ui.filterFrom||"X"}→${this.ui.filterTo||"X"}).json`, {type: "text/plain;charset=utf-8"});
       saveAs(file);
     },
     exportPageCsv() {
@@ -335,7 +335,7 @@ const RootComponent = {
       let txt = [txt_h, txt_b].join("\n");
       // console.log(txt);
       // console.log(txt);
-      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(${this.ui.idxStart + 1}-${this.ui.idxStart + this.ui.numPerPage}-of-${this.items.length}).csv`, {type: "text/plain;charset=utf-8"});
+      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(${this.ui.idxStart + 1}-${this.ui.idxStart + this.ui.numPerPage}-of-${this.items.length})-(${this.ui.filterFrom||"X"}→${this.ui.filterTo||"X"}).csv`, {type: "text/plain;charset=utf-8"});
       saveAs(file);
     },
     exportAllCsv() {
@@ -353,7 +353,7 @@ const RootComponent = {
       // console.log(txt_b);
       let txt = [txt_h, txt_b].join("\n");
       // console.log(txt);
-      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(1-${this.items.length}-of-${this.items.length}).csv`, {type: "text/plain;charset=utf-8"});
+      let file = new File([txt], `SpaCE2021-task${this.ui.task}-method${this.ui.orderMethod}-(1-${this.items.length}-of-${this.items.length})-(${this.ui.filterFrom||"X"}→${this.ui.filterTo||"X"}).csv`, {type: "text/plain;charset=utf-8"});
       saveAs(file);
     },
 
@@ -414,7 +414,7 @@ const RootComponent = {
           ( item.qID[0] == task ) &&
           ( filterActions[ (orderMethod).toString() ](item.qID) ) &&
           ( (SELF.ui.filterPlan==2||SELF.ui.filterPlan==4) ? item.from==SELF.ui.filterFrom : true ) &&
-          ( (SELF.ui.filterPlan==3||SELF.ui.filterPlan==4) ? item.from==SELF.ui.filterTo : true )
+          ( (SELF.ui.filterPlan==3||SELF.ui.filterPlan==4) ? item.to==SELF.ui.filterTo : true )
         )
       )
       .map( (item) => item.qID )
