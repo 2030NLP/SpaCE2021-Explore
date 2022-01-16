@@ -83,8 +83,171 @@
 </div>
 
 
-
 <div class="row" v-if="imported">
+  <div class="col">
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link" :class="tab == TABS.data ? 'active' : ''" href="#" @click="tab = TABS.data">数据总览</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" :class="tab == TABS.clue ? 'active' : ''" href="#" @click="tab = TABS.clue">线索信息</a>
+      </li>
+      <!-- <li class="nav-item">
+        <a class="nav-link disabled">Disabled</a>
+      </li> -->
+    </ul>
+  </div>
+</div>
+
+<div class="row" v-if="imported" v-show="tab == TABS.clue">
+  <div class="col">
+    <p>请选择要评估的线索</p>
+  </div>
+</div>
+<div class="row" v-if="imported" v-show="tab == TABS.clue">
+  <div class="col">
+    <div class="input-group input-group-sm">
+      <div class="input-group-text">
+        <input class="form-check-input mt-0" type="checkbox" value="">
+      </div>
+      <span class="input-group-text">词项筛选</span>
+      <select class="form-select" v-model="ui2.filterPlan">
+        <option value="0" selected>请选择筛选依据</option>
+        <option value="1">不筛选</option>
+        <option value="2">原词</option>
+        <option value="3">替换词</option>
+        <option value="4">替换对</option>
+      </select>
+      <input type="text" class="form-control" v-if="ui2.filterPlan==2||ui2.filterPlan==4" v-model="ui2.filterFrom">
+      <input type="text" class="form-control" v-if="ui2.filterPlan==3||ui2.filterPlan==4" v-model="ui2.filterTo">
+    </div>
+  </div>
+</div>
+<div class="row" v-if="imported" v-show="tab == TABS.clue">
+  <div class="col">
+    <div class="input-group input-group-sm">
+      <div class="input-group-text">
+        <input class="form-check-input mt-0" type="checkbox" value="">
+      </div>
+      <span class="input-group-text">原句编号筛选</span>
+      <!-- <span class="input-group-text">请输入原句编号</span> -->
+      <input type="text" class="form-control" placeholder="请输入原句编号" v-model="ui2.originSentenceID">
+    </div>
+  </div>
+</div>
+<div class="row" v-if="imported" v-show="tab == TABS.clue">
+  <div class="col">
+    <div class="input-group input-group-sm">
+      <div class="input-group-text">
+        <input class="form-check-input mt-0" type="checkbox" value="">
+      </div>
+      <span class="input-group-text">句子包含关键词筛选</span>
+      <input type="text" class="form-control" placeholder="请输入句子包含的关键词" v-model="ui2.sentenceKeyword">
+    </div>
+  </div>
+</div>
+<div class="row" v-if="imported" v-show="tab == TABS.clue">
+  <div class="col">
+    <div class="input-group input-group-sm">
+      <div class="input-group-text">
+        <input class="form-check-input mt-0" type="checkbox" value="">
+      </div>
+      <span class="input-group-text">归因类型筛选</span>
+      <select class="form-select" v-model="ui2.reasonType">
+        <option value="0" selected>请选择归因类型</option>
+        <option value="5">不选</option>
+        <option value="1">不宜搭配</option>
+        <option value="2">语义冲突</option>
+        <option value="3">信息冲突</option>
+        <option value="4">不符合常识</option>
+      </select>
+    </div>
+  </div>
+</div>
+<div class="row" v-if="imported" v-show="tab == TABS.clue">
+  <div class="col">
+    <button type="button" class="mx-2 my-1 btn btn-sm btn-outline-secondary" __click="makeData">开始分析</button>
+    <button type="button" class="mx-2 my-1 btn btn-sm btn-outline-secondary" __click="makeData">输出当前选定线索的评估信息的表格</button>
+    <button type="button" class="mx-2 my-1 btn btn-sm btn-outline-secondary" __click="makeData">输出所有线索的评估信息的表格</button>
+    <button type="button" class="mx-2 my-1 btn btn-sm btn-outline-secondary" __click="makeData">输出当前选定线索的评估信息的json</button>
+    <button type="button" class="mx-2 my-1 btn btn-sm btn-outline-secondary" __click="makeData">输出所有线索的评估信息的json</button>
+  </div>
+</div>
+
+<div class="row" v-if="imported" v-show="tab == TABS.clue">
+  <div class="col">
+    <!-- -- -->
+    <p>当前筛选条件是：</p>
+    <!-- -- -->
+    <p>在子任务1出现的次数：</p>
+    <p>在子任务1中Judge1为 True 的次数：</p>
+    <p>在子任务1中Judge1为 False 的次数：</p>
+    <p>在子任务2出现的次数：</p>
+    <p>在子任务2中Judge2为 True 的次数：</p>
+    <p>在子任务2中Judge2为 False 的次数：</p>
+    <p>在子任务3出现的次数：</p>
+    <p>在子任务3中Judge1为 True 的次数：</p>
+    <p>在子任务3中Judge1为 False 的次数：</p>
+    <p>在子任务3中Judge2为 True 的次数：</p>
+    <p>在子任务3中Judge2为 False 的次数：</p>
+    <p>在子任务1、3中Judge1为 True 的总次数：</p>
+    <p>在子任务1、3中Judge1为 False 的总次数：</p>
+    <p>在子任务2、3中Judge2为 True 的总次数：</p>
+    <p>在子任务2、3中Judge2为 False 的总次数：</p>
+    <!-- -- -->
+    <p>在子任务1测试集出现的次数：</p>
+    <p>在子任务1测试集中Judge1为 True 的次数：</p>
+    <p>在子任务1测试集中Judge1为 False 的次数：</p>
+    <p>在子任务2测试集出现的次数：</p>
+    <p>在子任务2测试集中Judge2为 True 的次数：</p>
+    <p>在子任务2测试集中Judge2为 False 的次数：</p>
+    <p>在子任务3测试集出现的次数：</p>
+    <p>在子任务3测试集中Judge1为 True 的次数：</p>
+    <p>在子任务3测试集中Judge1为 False 的次数：</p>
+    <p>在子任务3测试集中Judge2为 True 的次数：</p>
+    <p>在子任务3测试集中Judge2为 False 的次数：</p>
+    <p>在子任务1、3测试集中Judge1为 True 的总次数：</p>
+    <p>在子任务1、3测试集中Judge1为 False 的总次数：</p>
+    <p>在子任务2、3测试集中Judge2为 True 的总次数：</p>
+    <p>在子任务2、3测试集中Judge2为 False 的总次数：</p>
+    <!-- -- -->
+    <p>在子任务1训练集出现的次数：</p>
+    <p>在子任务1训练集中Judge1为 True 的次数：</p>
+    <p>在子任务1训练集中Judge1为 False 的次数：</p>
+    <p>在子任务2训练集出现的次数：</p>
+    <p>在子任务2训练集中Judge2为 True 的次数：</p>
+    <p>在子任务2训练集中Judge2为 False 的次数：</p>
+    <p>在子任务3训练集出现的次数：</p>
+    <p>在子任务3训练集中Judge1为 True 的次数：</p>
+    <p>在子任务3训练集中Judge1为 False 的次数：</p>
+    <p>在子任务3训练集中Judge2为 True 的次数：</p>
+    <p>在子任务3训练集中Judge2为 False 的次数：</p>
+    <p>在子任务1、3训练集中Judge1为 True 的总次数：</p>
+    <p>在子任务1、3训练集中Judge1为 False 的总次数：</p>
+    <p>在子任务2、3训练集中Judge2为 True 的总次数：</p>
+    <p>在子任务2、3训练集中Judge2为 False 的总次数：</p>
+    <!-- -- -->
+    <p>在子任务1验证集出现的次数：</p>
+    <p>在子任务1验证集中Judge1为 True 的次数：</p>
+    <p>在子任务1验证集中Judge1为 False 的次数：</p>
+    <p>在子任务2验证集出现的次数：</p>
+    <p>在子任务2验证集中Judge2为 True 的次数：</p>
+    <p>在子任务2验证集中Judge2为 False 的次数：</p>
+    <p>在子任务3验证集出现的次数：</p>
+    <p>在子任务3验证集中Judge1为 True 的次数：</p>
+    <p>在子任务3验证集中Judge1为 False 的次数：</p>
+    <p>在子任务3验证集中Judge2为 True 的次数：</p>
+    <p>在子任务3验证集中Judge2为 False 的次数：</p>
+    <p>在子任务1、3验证集中Judge1为 True 的总次数：</p>
+    <p>在子任务1、3验证集中Judge1为 False 的总次数：</p>
+    <p>在子任务2、3验证集中Judge2为 True 的总次数：</p>
+    <p>在子任务2、3验证集中Judge2为 False 的总次数：</p>
+    <!-- -- -->
+  </div>
+</div>
+
+
+<div class="row" v-if="imported" v-show="tab == TABS.data">
   <div class="col">
     <div class="input-group input-group-sm">
       <select class="form-select" v-model="ui.taskPlan">
@@ -109,10 +272,10 @@
   </div>
 </div>
 
-<div class="row" v-if="imported">
+<div class="row" v-if="imported" v-show="tab == TABS.data">
   <div class="col">
     <div class="input-group input-group-sm">
-      <span class="input-group-text" id="basic-addon1">替换词筛选</span>
+      <span class="input-group-text">词项筛选</span>
       <select class="form-select" v-model="ui.filterPlan">
         <option value="0" selected>请选择筛选依据</option>
         <option value="1">不筛选</option>
@@ -127,7 +290,7 @@
   </div>
 </div>
 
-<div class="row" v-if="imported">
+<div class="row" v-if="imported" v-show="tab == TABS.data">
   <div class="col">
     <div class="card table-wrap-wrap">
       <div class="card-header">
@@ -251,9 +414,25 @@ let xx=3;
 </script>
 
 <script type="text/javascript">
+
 const RootComponent = {
+
   data() {
+    const TABS = {
+      data: Symbol(),
+      word: Symbol(),
+    };
     return {
+      TABS: TABS,
+      tab: TABS.data,
+      ui2: {
+        filterPlan: 0,
+        filterFrom: "",
+        filterTo: "",
+        originSentenceID: "",
+        sentenceKeyword: "",
+        reasonType: 0,
+      },
       ui: {
         task: 0,
         taskPlan: 0,
